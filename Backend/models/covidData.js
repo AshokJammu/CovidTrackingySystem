@@ -8,7 +8,9 @@ var covidRegistration = new Schema({
     department:{type: String, required:true},
     designation:{type:String, required:true},
     status:{type:Number, required:true},
-    userType:{type:String,required:true}
+    userType:{type:String,required:true},
+    date:{type:String,required:true},
+    days:{type:Number,required:true}
 
 })
 
