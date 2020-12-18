@@ -21,7 +21,7 @@ import {
     payload
   });
   
-  export const loginUserData = payload => dispatch => {
+  export const loginUserData = (payload) => dispatch => {
     console.log(payload, "amm");
     dispatch(loginUserRequest(payload));
   
@@ -36,4 +36,5 @@ import {
         dispatch(loginUserFailure(err));
       });
   };
+
   

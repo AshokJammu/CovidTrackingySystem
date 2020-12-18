@@ -16,9 +16,15 @@ class Login extends React.Component {
   render() {
     const { password, empId} = this.state;
     // console.log(password,empId)
-    const { isLogin, loginUserData,loginData } = this.props;
+    const { isLogin,loginData,loginUserData } = this.props;
     console.log(isLogin,loginData, "props");
-    // console.log(token, empId, message, "logggjsx");
+    if(loginData){
+
+        if(isLogin && loginData.data[0].userType === "admin"){
+          this.props.history.push("/admin/dashboard/all")
+        }
+    }
+
     return (
       <>
         <div class="mb-3 row">
@@ -63,13 +69,13 @@ class Login extends React.Component {
             loginUserData(this.state);
           }}
         >
-          SUBMIT
+          LOGIN
         </button>
          
         <h3>{loginData.message}</h3>
-        {console.log(loginData.error)}
+        {/* {console.log(loginData.error)} */}
         {/* {loginData.error === false && <Redirect to="/dashboard" />} */}
-        {loginData.error === false && <Dashboard/>}
+        {/* {loginData.error === false && <Dashboard/>} */}
       </>
        
     );

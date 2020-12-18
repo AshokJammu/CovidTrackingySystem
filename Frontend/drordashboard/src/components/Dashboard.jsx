@@ -17,19 +17,6 @@ class Dashboard extends React.Component {
       <>
         <h1>List of Employeess</h1>
         <Navbar />
-        <Router />
-        
-        <input
-          type="text"
-          onChange={(e) =>
-            this.setState({
-              search: e.target.value,
-            })
-          }
-          value={search}
-        />
-
-        <button>SEARCH</button>
       </>
     );
   }

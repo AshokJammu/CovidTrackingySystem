@@ -1,12 +1,12 @@
 import React from "react"
 import './App.css';
-import Login from "./components/Login";
+import Routes from "./Navbar/Router"
 
 function App() {
   return (
     <div className="App">
       <h1>COVID +ve Employee Tracking  System</h1>
-      <Login />
+      <Routes />
     </div>
   );
 }

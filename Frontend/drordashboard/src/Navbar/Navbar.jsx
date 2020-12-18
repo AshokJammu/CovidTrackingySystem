@@ -6,16 +6,16 @@ const Navbar = () => {
     <>
       {/* <h1>NavBar</h1> */}
       <div>
-        <Link to="/" style={{ padding: 20 }}>
+        <Link to="/admin/dashboard/all" style={{ padding: 20 }}>
          Allusers
         </Link>
 
-        <Link to="/covid" style={{ padding: 20 }}>
+        <Link to="/admin/dashboard/covid" style={{ padding: 20 }}>
           Covid
         </Link>
 
-        <Link to="/dashboard" style={{ padding: 20 }}>
-          DASHBOARD
+        <Link to="/admin/dashboard/quarantine" style={{ padding: 20 }}>
+          Quarantine
         </Link>
       </div>
     </>
