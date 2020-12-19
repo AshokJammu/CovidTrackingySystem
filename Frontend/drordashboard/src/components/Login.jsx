@@ -4,6 +4,19 @@ import { connect } from "react-redux";
 import { loginUserData } from "../redux/Login/action";
 // import { Redirect } from "react-router-dom";
 import Dashboard from "./Dashboard";
+import HomeNavbar from "./HomeNavbar";
+
+function getData(key) {
+  try {
+      let data = localStorage.getItem(key)
+      data = JSON.parse(data)
+      return data
+  }
+  catch{
+      return undefined
+  }
+}
+
 
 class Login extends React.Component {
   constructor(props) {
@@ -11,29 +24,50 @@ class Login extends React.Component {
     this.state = {
       empId: "",
       password: "",
+      idFlag: false,
+      passwordFlag:false
     };
   }
+
+  handleLogin =()=>{
+    let {empId,password,idFlag,passwordFlag} = this.state
+
+    if(empId === "" || password == ""){
+      this.setState({
+        idFlag:!idFlag,
+        passwordFlag:!passwordFlag
+      })
+    }else{
+      let obj={
+        empId:empId,
+        password:password
+      }
+      this.props.loginUserData(obj)
+    }
+  }
   render() {
-    const { password, empId} = this.state;
+    const { password, empId,passwordFlag,idFlag} = this.state;
     // console.log(password,empId)
-    const { isLogin,loginData,loginUserData } = this.props;
+    const { isLogin,loginData } = this.props;
     console.log(isLogin,loginData, "props");
-    if(loginData){
+    if(loginData && getData("cutomerExist")){
 
         if(isLogin && loginData.data[0].userType === "admin"){
           this.props.history.push("/admin/dashboard/all")
         }
     }
 
+
     return (
       <>
-        <div class="mb-3 row">
-          {/* <label for="staticEmail" class="col-sm-2 col-form-label">Email</label> */}
-          <div class="col-sm-10">
+      <HomeNavbar props={this.props}/>
+      <div class="border border-dark mx-5">
+        
+        <div class="mb-3 row px-5 my-4">
+           <div class="col-sm-10">
             <input
               type="text"
-              readonly
-              class="form-control-plaintext"
+              className={`form-control  ${idFlag ? 'is-invalid' : ''}`}
               id="staticEmail"
               value={empId}
               placeholder="Enter EmpID"
@@ -44,14 +78,14 @@ class Login extends React.Component {
               }
             />
           </div>
+            {idFlag && <p class="text-danger">Please enter valid EmployeeID</p>}
         </div>
         <br />
-        <div class="mb-3 row">
-          {/* <label for="inputPassword" class="col-sm-2 col-form-label">Password</label> */}
-          <div class="col-sm-10">
+        <div class="mb-3 row px-5 my-4">
+           <div class="col-sm-10">
             <input
               type="password"
-              class="form-control"
+              className={`form-control  ${passwordFlag ? 'is-invalid' : ''}`}
               id="inputPassword"
               value={password}
               placeholder="Enter Password"
@@ -62,17 +96,18 @@ class Login extends React.Component {
               }
             />
           </div>
+            {passwordFlag && <p class="text-danger">Please enter valid Password</p>}
         </div>
-        <br />
-        <button
+        <button class="btn btn-primary btn-center"
           onClick={() => {
-            loginUserData(this.state);
+            this.handleLogin();
           }}
         >
           LOGIN
         </button>
+      </div>
+        <br />
          
-        <h3>{loginData.message}</h3>
         {/* {console.log(loginData.error)} */}
         {/* {loginData.error === false && <Redirect to="/dashboard" />} */}
         {/* {loginData.error === false && <Dashboard/>} */}

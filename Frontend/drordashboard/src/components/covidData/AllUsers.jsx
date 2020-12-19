@@ -3,26 +3,48 @@ import { connect } from "react-redux";
 import axios from "axios";
 import Search from "../Search";
 import Navbar from "../../Navbar/Navbar";
+import HomeNavbar from "../HomeNavbar";
 // import { loginUserData } from "../redux/Login/action";
+function getData(key) {
+  try {
+    let data = localStorage.getItem(key);
+    data = JSON.parse(data);
+    return data;
+  } catch {
+    return undefined;
+  }
+}
+
+function saveData(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
 
 class AllUsers extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      userData: "",
+      userdata: "",
       checkStatus: false,
-      quarantineId:"",
-      quarantineDays:"",
-      covidId:""
-
+      quarantineId: "",
+      quarantineDays: "",
+      covidId: "",
+      quarantineMessage: false,
+      userExist: "",
+      logOutFlag: false,
+      quarantineFlag: false,
+      covidFlag: false,
+      statuArr: []
     };
   }
 
   componentDidMount() {
-    axios.get("http://localhost:5000/drorUsers").then(
+    this.setState({
+      userExist: getData("cutomerExist"),
+    });
+    axios.get("https://drorcovidinfo.herokuapp.com/drorUsers").then(
       (res) =>
         this.setState({
-          userdata: res.data
+          userdata: res.data,
         })
       // console.log(res.data)
     );
@@ -31,54 +53,138 @@ class AllUsers extends React.Component {
   handleCovid = (id) => {
     // console.log(id);
     this.setState({
-      covidId:id
-    })
+      covidId: id,
+    });
   };
 
   handleConfirm = () => {
-    const {covidId} = this.state
+    const { covidId,statuArr,userdata } = this.state;
+    var newStatus = userdata.filter(item=> {
+      if(item.empId === Number(covidId)){
+        item.status = 1
+        item.days = 14
+        return item
+      }else{
+        return item
+      }
+    })
+
     let obj = {
-      empId:covidId,
-      days:14,
-      status:1
-    }
-    axios.post("http://localhost:5000/drorUsers/statusUpdate",obj)
-    .then((res) =>res.data);
+      empId: Number(covidId),
+      days: 14,
+      status: 1,
+    };
+    this.setState({
+      covidFlag: true,
+       statuArr:[...statuArr,obj],
+       userdata:newStatus
+    });
+
+    axios
+      .post("https://drorcovidinfo.herokuapp.com/drorUsers/statusUpdate", obj)
+      .then((res) => res.data);
   };
 
-  handleAdd=()=>{
+  handleAdd = () => {
     //console.log()
-    const {quarantineDays,quarantineId} = this.state
-    let obj = {
-      empId:quarantineId,
-      days:quarantineDays,
-      status:2
-    }
-    axios.post("http://localhost:5000/drorUsers/statusUpdate",obj)
-    .then((res) =>res.data);
-  }
+    const { quarantineDays, quarantineId, quarantineMessage,statuArr,userdata } = this.state;
 
-  handleRecovery=(id)=>{
+    var newStatus = userdata.filter(item=> {
+      if(item.empId === Number(quarantineId)){
+        item.status = 2
+        item.days = Number(quarantineDays)
+        return item
+      }else{
+        return item
+      }
+    })
     let obj = {
-      empId:id,
-      days:0,
-      status:0
-    }
-    axios.post("http://localhost:5000/drorUsers/statusUpdate",obj)
-    .then((res) =>res.data);
-  }
+      empId: Number(quarantineId),
+      days: Number(quarantineDays),
+      status: 2,
+    };
+
+    this.setState({
+      quarantineMessage: !quarantineMessage,
+      quarantineFlag: true,
+      covidFlag: false,
+      statuArr: [...statuArr,obj],
+      userdata: newStatus
+    });
+
+
+    axios
+      .post("https://drorcovidinfo.herokuapp.com/drorUsers/statusUpdate", obj)
+      .then((res) => res.data);
+  };
+
+  handleRecovery = (id) => {
+    const {userdata} = this.state
+    var newStatus = userdata.filter(item=> {
+      if(item.empId === Number(id)){
+        item.status = 0
+        item.days = 0
+        return item
+      }else{
+        return item
+      }
+    })
+    let obj = {
+      empId: id,
+      days: 0,
+      status: 0,
+    };
+
+    this.setState({
+      userdata:newStatus
+    })
+
+    axios
+      .post("https://drorcovidinfo.herokuapp.com/drorUsers/statusUpdate", obj)
+      .then((res) => res.data);
+  };
+
+  handleLogout = () => {
+    console.log("logout");
+    saveData("cutomerExist", null);
+    this.setState({
+      logOutFlag: true,
+      userExist: "",
+    });
+    // window.location.reload(false);
+    // this.props.history.push("/");
+  };
 
   render() {
-    const { userdata, checkStatus,quarantineDays,quarantineId } = this.state;
+
+    const {
+      userdata,
+      checkStatus,
+      quarantineDays,
+      quarantineId,
+      quarantineMessage,
+      userExist,
+      quarantineFlag,
+      covidFlag,
+      covidId,
+      statuArr
+    } = this.state;
     // const userArr = userdata.data;
-    // console.log(userdata, "alldata");
-    console.log(checkStatus,quarantineDays,quarantineId, "check");
+    console.log(userdata, "alldata");
+    // console.log(checkStatus, quarantineDays, quarantineId, "check");
+
+    if (getData("cutomerExist") === null) {
+      console.log("history");
+      this.props.history.push("/");
+    }
+
     return (
       <>
         {/* <h1>All users List</h1> */}
+        <HomeNavbar logFn={this.handleLogout} />
         <Navbar />
         <Search />
-        <table className="table">
+        <table className="table table-striped">
           <thead className="thead-dark">
             <tr>
               <th scope="col">Emp Id</th>
@@ -94,15 +200,178 @@ class AllUsers extends React.Component {
               <tbody>
                 <tr>
                   <th scope="row">{item.empId}</th>
-                  {item.status === 0 && <td>Healthy</td>}
-                  {item.status === 1 && <td>Covid</td>}
-                  {item.status === 2 && <td>Quarantine</td>}
+                  {/* <td>
+                    {item.status === 0 && !quarantineFlag && !covidFlag && (
+                      <span class="text-success">Healthy</span>
+                    )}
+                    {item.status === 1 && !quarantineFlag && !covidFlag && (
+                      <span class="text-danger">Covid</span>
+                    )}
+                    {item.status === 2 && !quarantineFlag && !covidFlag && (
+                      <span class="text-warning">Quarantine</span>
+                    )}
+                    {quarantineFlag && item.empId === quarantineId ? (
+                      <span class="text-warning">Quarantine</span>
+                    ) : (
+                      <>
+                        {quarantineFlag && (
+                          <>
+                            {item.status === 0 && (
+                              <span class="text-success">Healthy</span>
+                            )}
+                            {item.status === 1 && (
+                              <span class="text-danger">Covid</span>
+                            )}
+                            {item.status === 2 && (
+                              <span class="text-warning">Quarantine</span>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+
+                    {covidFlag && item.empId === covidId ? (
+                      <span class="text-danger">Covid</span>
+                    ) : (
+                      <>
+                        {covidFlag && (
+                          <>
+                            {item.status === 0 && (
+                              <span class="text-success">Healthy</span>
+                            )}
+                            {item.status === 1 && (
+                              <span class="text-danger">Covid</span>
+                            )}
+                            {item.status === 2 && (
+                              <span class="text-warning">Quarantine</span>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </td> */}
+                  {/* <td>
+                    { statuArr.length > 0 ?  statuArr.filter(ele=>
+                         {if(ele.empId === item.empId){
+                           return ele
+                         }}
+                      )  && statuArr[0].empId == item.empId ?  <>{statuArr[0].status === 0  && (
+                        <span class="text-success">First if Healthy</span>
+                      )}
+                      {statuArr[0].status === 1 &&  (
+                        <span class="text-danger"> first if Covid</span>
+                      )}
+                      {statuArr[0].status  === 2  && (
+                        <span class="text-warning"> first if  Quarantine</span>
+                      )}</> :
+                       <>
+                      {item.status === 0  && (
+                      <span class="text-success">  first else Healthy</span>
+                    )}
+                    {item.status === 1 &&   (
+                      <span class="text-danger"> first elseCovid</span>
+                    )}
+                    {item.status === 2 &&   (
+                      <span class="text-warning">first else Quarantine</span>
+                    )} 
+                      </> 
+                    :
+                    <>
+                   {item.status === 0 &&   (
+                   <span class="text-success">main else Healthy</span>
+                 )}
+                 {item.status === 1 &&   (
+                   <span class="text-danger"> main else  Covid</span>
+                 )}
+                 {item.status === 2 &&   (
+                   <span class="text-warning">main else  Quarantine</span>
+                 )}
+                   </>   
+                    }
+                  </td> */}
+                  <td>
+                  {item.status === 0 &&   (
+                   <span class="text-success">Healthy</span>
+                 )}
+                 {item.status === 1 &&   (
+                   <span class="text-danger">Covid</span>
+                 )}
+                 {item.status === 2 &&   (
+                   <span class="text-warning">Quarantine</span>
+                 )}
+                  </td>
                   <td>{item.name}</td>
                   <td>{item.department}</td>
                   <td>{item.designation}</td>
+
                   <td>
-                    {item.status === 0 ? 
-                    <button
+                  {item.status === 0 &&  (
+                   <button
+                   type="button"
+                   class="btn btn-danger"
+                   data-toggle="modal"
+                   data-target="#exampleModalCenter"
+                   onClick={() => this.handleCovid(item.empId)}
+                 >
+                   Mark As Covid
+                 </button>
+                 )}
+                 {item.status === 1 &&   (
+                   <button
+                   type="button"
+                   class="btn btn-success"
+                   onClick={() => this.handleRecovery(item.empId)}
+                 >
+                   Mark As Recovery
+                 </button>
+                 )}
+                 {item.status === 2 &&   (
+                   <button
+                   type="button"
+                   class="btn btn-success"
+                   onClick={() => this.handleRecovery(item.empId)}
+                 >
+                   Mark As Recovery
+                 </button>
+                 )}
+                  </td>
+                  {/* <td>
+                  {statuArr.length > 0 ?  statuArr.filter(ele=>
+                         {if(ele.empId == item.empId){
+                           return ele
+                         }}
+                      )  && statuArr[0].empId == item.empId ?  <>{statuArr[0].status === 0  && (
+                        <button
+                        type="button"
+                        class="btn btn-danger"
+                        data-toggle="modal"
+                        data-target="#exampleModalCenter"
+                        onClick={() => this.handleCovid(item.empId)}
+                      >
+                        Mark As Covid
+                      </button>
+                      )}
+                      {statuArr[0].status === 1 &&  (
+                         <button
+                         type="button"
+                         class="btn btn-success"
+                         onClick={() => this.handleRecovery(item.empId)}
+                       >
+                         Mark As Recovery
+                       </button>
+                      )}
+                      {statuArr[0].status  === 2  && (
+                        <button
+                        type="button"
+                        class="btn btn-success"
+                        onClick={() => this.handleRecovery(item.empId)}
+                      >
+                        Mark As Recovery
+                      </button>
+                      )}</> :
+                       <>
+                      {item.status === 0 &&   (
+                      <button
                       type="button"
                       class="btn btn-danger"
                       data-toggle="modal"
@@ -110,22 +379,157 @@ class AllUsers extends React.Component {
                       onClick={() => this.handleCovid(item.empId)}
                     >
                       Mark As Covid
-                    </button> : <button
+                    </button>
+                    )}
+                    {item.status === 1 &&  (
+                      <button
                       type="button"
                       class="btn btn-success"
                       onClick={() => this.handleRecovery(item.empId)}
                     >
                       Mark As Recovery
-                    </button> 
-                     }
-                  </td>
+                    </button>
+                    )}
+                    {item.status === 2 &&   (
+                      <button
+                      type="button"
+                      class="btn btn-success"
+                      onClick={() => this.handleRecovery(item.empId)}
+                    >
+                      Mark As Recovery
+                    </button>
+                    )} 
+                      </> 
+                    :
+                    <>
+                   {item.status === 0 &&  (
+                   <button
+                   type="button"
+                   class="btn btn-danger"
+                   data-toggle="modal"
+                   data-target="#exampleModalCenter"
+                   onClick={() => this.handleCovid(item.empId)}
+                 >
+                   Mark As Covid
+                 </button>
+                 )}
+                 {item.status === 1 &&   (
+                   <button
+                   type="button"
+                   class="btn btn-success"
+                   onClick={() => this.handleRecovery(item.empId)}
+                 >
+                   Mark As Recovery
+                 </button>
+                 )}
+                 {item.status === 2 &&   (
+                   <button
+                   type="button"
+                   class="btn btn-success"
+                   onClick={() => this.handleRecovery(item.empId)}
+                 >
+                   Mark As Recovery
+                 </button>
+                 )}
+                   </>   
+                    }
+                  </td> */}
+                  {/* <td>
+                    {item.status === 0 && !quarantineFlag && !covidFlag ? (
+                      <button
+                        type="button"
+                        class="btn btn-danger"
+                        data-toggle="modal"
+                        data-target="#exampleModalCenter"
+                        onClick={() => this.handleCovid(item.empId)}
+                      >
+                        Mark As Covid
+                      </button>
+                    ) : (
+                      <>
+                        {!quarantineFlag && !covidFlag && (
+                          <button
+                            type="button"
+                            class="btn btn-success"
+                            onClick={() => this.handleRecovery(item.empId)}
+                          >
+                            Mark As Recovery
+                          </button>
+                        )}
+                      </>
+                    )}
+                    {quarantineFlag && item.empId === quarantineId ? (
+                      <button
+                        type="button"
+                        class="btn btn-success"
+                        onClick={() => this.handleRecovery(item.empId)}
+                      >
+                        Mark As Recovery
+                      </button>
+                    ) : (
+                      <>
+                        {quarantineFlag && (
+                          <>
+                            {item.status === 0 ? (
+                              <button
+                                type="button"
+                                class="btn btn-danger"
+                                onClick={() => this.handleCovid(item.empId)}
+                              >
+                                Mark As Covid
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                class="btn btn-success"
+                                onClick={() => this.handleRecovery(item.empId)}
+                              >
+                                Mark As Recovery
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+                    {covidFlag && item.empId === covidId ? (
+                      <button
+                        type="button"
+                        class="btn btn-success"
+                        onClick={() => this.handleRecovery(item.empId)}
+                      >
+                        Mark As Recovery
+                      </button>
+                    ) : (
+                      <>
+                        {covidFlag && (
+                          <>
+                            {item.status === 0 ? (
+                              <button
+                                type="button"
+                                class="btn btn-danger"
+                                onClick={() => this.handleCovid(item.empId)}
+                              >
+                                Mark As Covid
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                class="btn btn-success"
+                                onClick={() => this.handleRecovery(item.empId)}
+                              >
+                                Mark As Recovery
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </td> */}
                 </tr>
               </tbody>
             ))}
         </table>
 
-        {/* {userdata && userdata.map(item => {
-                    return ( */}
         <div
           class="modal fade"
           id="exampleModalCenter"
@@ -205,19 +609,23 @@ class AllUsers extends React.Component {
                       <option value="1">1</option>
                       <option value="2">2</option>
                       <option value="3">3</option>
-                      <option value="1">4</option>
-                      <option value="2">5</option>
-                      <option value="3">6</option>
-                      <option value="3">7</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
                     </select>
-                    <button class="btn btn-outline-secondary" 
-                    type="button"
-                    onClick={() => this.handleAdd()}
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      onClick={() => this.handleAdd()}
                     >
                       Add
                     </button>
                   </div>
                 )}
+                {quarantineMessage
+                  ? "Successfully Added to Quarantine"
+                  : "Please Add to Quarantinee"}
               </div>
               <div class="modal-footer">
                 <button
@@ -229,7 +637,9 @@ class AllUsers extends React.Component {
                 </button>
                 <button
                   type="button"
-                  class="btn btn-primary"
+                  class="btn btn-primary close"
+                  data-dismiss="modal"
+                  aria-label="Close"
                   onClick={() => this.handleConfirm()}
                 >
                   Confirm

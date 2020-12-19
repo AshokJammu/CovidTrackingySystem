@@ -26,7 +26,7 @@ import {
     dispatch(loginUserRequest(payload));
   
     return axios
-      .post("http://localhost:5000/drorlogin", { ...payload })
+      .post("https://drorcovidinfo.herokuapp.com/drorlogin", { ...payload })
       .then(res => {
           console.log(res.data,"ax")
         return res.data;

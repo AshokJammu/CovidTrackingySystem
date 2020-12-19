@@ -15,7 +15,7 @@ class Dashboard extends React.Component {
     console.log(search);
     return (
       <>
-        <h1>List of Employeess</h1>
+        <h1 class="font-weight-bold">List of Employeess</h1>
         <Navbar />
       </>
     );
